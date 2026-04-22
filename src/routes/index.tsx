@@ -1,26 +1,327 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { Loader2, X, Sparkles, RefreshCw } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import { generateNames, refineName } from "@/utils/names.functions";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+type NameResult = {
+  direction: string;
+  name: string;
+  reason: string;
+};
+
+const REFINEMENT_OPTIONS = [
+  "More creative",
+  "More minimal",
+  "More futuristic",
+  "Shorter names",
+] as const;
+
+function Index() {
+  const generate = useServerFn(generateNames);
+  const refine = useServerFn(refineName);
+
+  const [userInput, setUserInput] = useState("");
+  const [submittedInput, setSubmittedInput] = useState("");
+  const [results, setResults] = useState<NameResult[] | null>(null);
+  const [loadingAll, setLoadingAll] = useState(false);
+  const [refiningIndex, setRefiningIndex] = useState<number | null>(null);
+  const [openRefinePanel, setOpenRefinePanel] = useState<number | null>(null);
+  const [refinementChoices, setRefinementChoices] = useState<Record<number, string>>({});
+  const [inputError, setInputError] = useState<string | null>(null);
+
+  async function handleGenerate(ideaOverride?: string) {
+    const idea = (ideaOverride ?? userInput).trim();
+    if (!idea) {
+      setInputError("Please describe your app idea first.");
+      return;
+    }
+    setInputError(null);
+    setLoadingAll(true);
+    setSubmittedInput(idea);
+    setOpenRefinePanel(null);
+    try {
+      const res = await generate({ data: { idea } });
+      setResults(res.names);
+    } catch (err) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : "Failed to generate names.";
+      toast.error(message, {
+        action: {
+          label: "Retry",
+          onClick: () => handleGenerate(idea),
+        },
+      });
+    } finally {
+      setLoadingAll(false);
+    }
+  }
+
+  async function handleRefine(index: number) {
+    if (!results) return;
+    const direction = results[index].direction;
+    const refinementType = refinementChoices[index] ?? REFINEMENT_OPTIONS[0];
+    setRefiningIndex(index);
+    try {
+      const res = await refine({
+        data: {
+          idea: submittedInput,
+          direction,
+          refinementType,
+        },
+      });
+      setResults((prev) => {
+        if (!prev) return prev;
+        const next = [...prev];
+        next[index] = { direction, name: res.name, reason: res.reason };
+        return next;
+      });
+      setOpenRefinePanel(null);
+    } catch (err) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : "Refinement failed.";
+      toast.error(message, {
+        action: {
+          label: "Retry",
+          onClick: () => handleRefine(index),
+        },
+      });
+    } finally {
+      setRefiningIndex(null);
+    }
+  }
+
+  const canSubmit = userInput.trim().length > 0 && !loadingAll;
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="min-h-screen bg-background">
+      <div className="mx-auto max-w-5xl px-4 py-12 sm:py-20">
+        {/* Header */}
+        <header className="mb-10 text-center sm:mb-14">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
+            <Sparkles className="h-3.5 w-3.5" />
+            AI-powered naming
+          </div>
+          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+            App Name Generator
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl text-base text-muted-foreground">
+            Turn your idea into three distinct name directions in seconds.
+          </p>
+        </header>
+
+        {/* Input */}
+        <section className="mx-auto max-w-2xl">
+          <Card className="rounded-2xl border-border p-6 shadow-none">
+            <Label htmlFor="idea" className="text-sm font-medium text-foreground">
+              Describe your app idea
+            </Label>
+            <Textarea
+              id="idea"
+              value={userInput}
+              onChange={(e) => {
+                setUserInput(e.target.value);
+                if (inputError) setInputError(null);
+              }}
+              placeholder="e.g. A social app for travelers to share hidden spots"
+              rows={4}
+              className="mt-2 resize-none rounded-xl border-border bg-background text-base"
+              aria-invalid={!!inputError}
+            />
+            {inputError && (
+              <p className="mt-2 text-sm text-destructive" role="alert">
+                {inputError}
+              </p>
+            )}
+            <Button
+              onClick={() => handleGenerate()}
+              disabled={!canSubmit}
+              className="mt-4 w-full rounded-xl"
+              size="lg"
+            >
+              {loadingAll ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Generating…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Generate Names
+                </>
+              )}
+            </Button>
+          </Card>
+        </section>
+
+        {/* Results */}
+        {(loadingAll || results) && (
+          <section className="mt-12">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {loadingAll && !results
+                ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
+                : results!.map((r, i) => (
+                    <NameCard
+                      key={i}
+                      result={r}
+                      isRefining={refiningIndex === i}
+                      isPanelOpen={openRefinePanel === i}
+                      refinementChoice={refinementChoices[i] ?? REFINEMENT_OPTIONS[0]}
+                      onOpenPanel={() => setOpenRefinePanel(i)}
+                      onClosePanel={() => setOpenRefinePanel(null)}
+                      onChangeRefinement={(value) =>
+                        setRefinementChoices((prev) => ({ ...prev, [i]: value }))
+                      }
+                      onRefine={() => handleRefine(i)}
+                      anyRefining={refiningIndex !== null}
+                    />
+                  ))}
+            </div>
+
+            {results && !loadingAll && (
+              <div className="mt-8 flex justify-center">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="rounded-xl"
+                  onClick={() => handleGenerate(submittedInput)}
+                  disabled={refiningIndex !== null}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Generate 3 New Names
+                </Button>
+              </div>
+            )}
+          </section>
+        )}
+      </div>
+    </main>
   );
 }
 
-function Index() {
-  return <PlaceholderIndex />;
+function SkeletonCard() {
+  return (
+    <Card className="flex flex-col gap-4 rounded-2xl border-border p-6 shadow-none">
+      <Skeleton className="h-5 w-32 rounded-full" />
+      <Skeleton className="h-8 w-3/4" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-5/6" />
+      <div className="mt-auto pt-2">
+        <Skeleton className="h-9 w-full rounded-md" />
+      </div>
+    </Card>
+  );
+}
+
+function NameCard({
+  result,
+  isRefining,
+  isPanelOpen,
+  refinementChoice,
+  onOpenPanel,
+  onClosePanel,
+  onChangeRefinement,
+  onRefine,
+  anyRefining,
+}: {
+  result: NameResult;
+  isRefining: boolean;
+  isPanelOpen: boolean;
+  refinementChoice: string;
+  onOpenPanel: () => void;
+  onClosePanel: () => void;
+  onChangeRefinement: (value: string) => void;
+  onRefine: () => void;
+  anyRefining: boolean;
+}) {
+  return (
+    <Card className="relative flex flex-col gap-4 rounded-2xl border-border p-6 shadow-none transition-all">
+      <span className="inline-flex w-fit items-center rounded-full border border-border bg-secondary px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-secondary-foreground">
+        {result.direction}
+      </span>
+
+      {isRefining ? (
+        <>
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Refining… this usually takes under 10 seconds
+          </div>
+        </>
+      ) : (
+        <>
+          <h3 className="text-2xl font-bold tracking-tight text-foreground">{result.name}</h3>
+          <p className="text-sm leading-relaxed text-muted-foreground">{result.reason}</p>
+        </>
+      )}
+
+      <div className="mt-auto pt-2">
+        {isPanelOpen && !isRefining ? (
+          <div className="space-y-3 rounded-xl border border-border bg-muted/40 p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-foreground">Refine direction</span>
+              <button
+                onClick={onClosePanel}
+                className="rounded-md p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+                aria-label="Cancel refinement"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <Select value={refinementChoice} onValueChange={onChangeRefinement}>
+              <SelectTrigger className="w-full rounded-lg bg-background text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REFINEMENT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={onRefine}
+              size="sm"
+              className="w-full rounded-lg"
+              disabled={anyRefining}
+            >
+              Regenerate
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full rounded-lg"
+            onClick={onOpenPanel}
+            disabled={isRefining || anyRefining}
+          >
+            Refine this direction
+          </Button>
+        )}
+      </div>
+    </Card>
+  );
 }
