@@ -36,6 +36,19 @@ const REFINEMENT_OPTIONS = [
   "Shorter names",
 ] as const;
 
+const REFINEMENT_LABELS: Record<string, string> = {
+  "More creative": "יותר יצירתי",
+  "More minimal": "יותר מינימליסטי",
+  "More futuristic": "יותר עתידני",
+  "Shorter names": "שמות קצרים יותר",
+};
+
+const DIRECTION_LABELS: Record<string, string> = {
+  "Clean & Professional": "נקי ומקצועי",
+  "Creative & Brandable": "יצירתי ומיתוגי",
+  "Bold & Innovative": "נועז וחדשני",
+};
+
 function Index() {
   const generate = useServerFn(generateNames);
   const refine = useServerFn(refineName);
@@ -52,7 +65,7 @@ function Index() {
   async function handleGenerate(ideaOverride?: string) {
     const idea = (ideaOverride ?? userInput).trim();
     if (!idea) {
-      setInputError("Please describe your app idea first.");
+      setInputError("אנא תארו תחילה את רעיון האפליקציה שלכם.");
       return;
     }
     setInputError(null);
@@ -64,10 +77,10 @@ function Index() {
       setResults(res.names);
     } catch (err) {
       console.error(err);
-      const message = err instanceof Error ? err.message : "Failed to generate names.";
+      const message = err instanceof Error ? err.message : "יצירת השמות נכשלה.";
       toast.error(message, {
         action: {
-          label: "Retry",
+          label: "נסו שוב",
           onClick: () => handleGenerate(idea),
         },
       });
@@ -98,10 +111,10 @@ function Index() {
       setOpenRefinePanel(null);
     } catch (err) {
       console.error(err);
-      const message = err instanceof Error ? err.message : "Refinement failed.";
+      const message = err instanceof Error ? err.message : "השיוף נכשל.";
       toast.error(message, {
         action: {
-          label: "Retry",
+          label: "נסו שוב",
           onClick: () => handleRefine(index),
         },
       });
@@ -140,13 +153,13 @@ function Index() {
         <header className="mb-10 text-center sm:mb-14">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-card/60 px-3 py-1 text-xs font-medium text-primary backdrop-blur">
             <Sparkles className="h-3.5 w-3.5" />
-            AI-powered naming
+            מבוסס בינה מלאכותית
           </div>
           <h1 className="bg-gradient-to-b from-foreground to-primary bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-6xl">
-            App Name Generator
+            מחולל שמות לאפליקציות
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
-            Turn your idea into three distinct name directions in seconds.
+            הפכו את הרעיון שלכם לשלושה כיווני שמות ייחודיים תוך שניות.
           </p>
         </header>
 
@@ -157,7 +170,7 @@ function Index() {
             style={{ boxShadow: "var(--glow-primary)" }}
           >
             <Label htmlFor="idea" className="text-sm font-medium text-foreground">
-              Describe your app idea
+              תארו את רעיון האפליקציה שלכם
             </Label>
             <Textarea
               id="idea"
@@ -166,10 +179,11 @@ function Index() {
                 setUserInput(e.target.value);
                 if (inputError) setInputError(null);
               }}
-              placeholder="e.g. A social app for travelers to share hidden spots"
+              placeholder="לדוגמה: אפליקציה חברתית למטיילים לשיתוף מקומות נסתרים"
               rows={4}
               className="mt-2 resize-none rounded-xl border-border bg-background/60 text-base focus-visible:ring-primary"
               aria-invalid={!!inputError}
+              dir="rtl"
             />
             {inputError && (
               <p className="mt-2 text-sm text-destructive" role="alert">
@@ -186,12 +200,12 @@ function Index() {
               {loadingAll ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating…
+                  יוצר שמות…
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Generate Names
+                  צרו שמות
                 </>
               )}
             </Button>
@@ -232,7 +246,7 @@ function Index() {
                   disabled={refiningIndex !== null}
                 >
                   <RefreshCw className="h-4 w-4" />
-                  Generate 3 New Names
+                  צרו 3 שמות חדשים
                 </Button>
               </div>
             )}
@@ -304,7 +318,7 @@ function NameCard({
           background: `${accent}12`,
         }}
       >
-        {result.direction}
+        {DIRECTION_LABELS[result.direction] ?? result.direction}
       </span>
 
       {isRefining ? (
@@ -314,7 +328,7 @@ function NameCard({
           <Skeleton className="h-4 w-5/6" />
           <div className="flex items-center gap-2 text-xs text-primary">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Refining… this usually takes under 10 seconds
+            משייף… זה לרוב לוקח פחות מ-10 שניות
           </div>
         </>
       ) : (
@@ -332,11 +346,11 @@ function NameCard({
         {isPanelOpen && !isRefining ? (
           <div className="space-y-3 rounded-xl border border-primary/30 bg-background/60 p-3 backdrop-blur">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-foreground">Refine direction</span>
+              <span className="text-xs font-medium text-foreground">שייפו את הכיוון</span>
               <button
                 onClick={onClosePanel}
                 className="rounded-md p-1 text-muted-foreground hover:bg-card hover:text-foreground"
-                aria-label="Cancel refinement"
+                aria-label="ביטול שיוף"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -348,7 +362,7 @@ function NameCard({
               <SelectContent>
                 {REFINEMENT_OPTIONS.map((opt) => (
                   <SelectItem key={opt} value={opt}>
-                    {opt}
+                    {REFINEMENT_LABELS[opt] ?? opt}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -359,7 +373,7 @@ function NameCard({
               className="w-full rounded-lg bg-primary text-primary-foreground hover:brightness-110"
               disabled={anyRefining}
             >
-              Regenerate
+              צרו מחדש
             </Button>
           </div>
         ) : (
@@ -370,7 +384,7 @@ function NameCard({
             onClick={onOpenPanel}
             disabled={isRefining || anyRefining}
           >
-            Refine this direction
+            שייפו את הכיוון הזה
           </Button>
         )}
       </div>
