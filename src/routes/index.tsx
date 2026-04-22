@@ -227,7 +227,7 @@ function Index() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="rounded-xl"
+                  className="rounded-xl border-primary/40 bg-card/40 text-primary backdrop-blur hover:bg-primary/10 hover:text-primary"
                   onClick={() => handleGenerate(submittedInput)}
                   disabled={refiningIndex !== null}
                 >
