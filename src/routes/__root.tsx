@@ -30,16 +30,16 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "App Name Generator" },
-      { name: "description", content: "Generate 3 perfect app names from your idea, with refinement options for tone and style." },
-      { name: "author", content: "App Name Generator" },
-      { property: "og:title", content: "App Name Generator" },
-      { property: "og:description", content: "Generate 3 perfect app names from your idea, with refinement options for tone and style." },
+      { title: "מחולל שמות לאפליקציות" },
+      { name: "description", content: "צרו 3 שמות מושלמים לאפליקציה מתוך הרעיון שלכם, עם אפשרויות לשיוף סגנון וטון." },
+      { name: "author", content: "מחולל שמות לאפליקציות" },
+      { property: "og:title", content: "מחולל שמות לאפליקציות" },
+      { property: "og:description", content: "צרו 3 שמות מושלמים לאפליקציה מתוך הרעיון שלכם, עם אפשרויות לשיוף סגנון וטון." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "App Name Generator" },
-      { name: "twitter:description", content: "Generate 3 perfect app names from your idea, with refinement options for tone and style." },
+      { name: "twitter:title", content: "מחולל שמות לאפליקציות" },
+      { name: "twitter:description", content: "צרו 3 שמות מושלמים לאפליקציה מתוך הרעיון שלכם, עם אפשרויות לשיוף סגנון וטון." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e84fcfe0-3f2e-46f4-a5eb-b3d6f9e347ac/id-preview-d5fe0aa4--7ad7edaf-7b0a-4c5a-9db4-c4f006a4eabf.lovable.app-1776858460052.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e84fcfe0-3f2e-46f4-a5eb-b3d6f9e347ac/id-preview-d5fe0aa4--7ad7edaf-7b0a-4c5a-9db4-c4f006a4eabf.lovable.app-1776858460052.png" },
     ],
@@ -57,7 +57,7 @@ export const Route = createRootRoute({
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="he" dir="rtl">
       <head>
         <HeadContent />
       </head>
