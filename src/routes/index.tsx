@@ -245,7 +245,7 @@ function Index() {
 
 function SkeletonCard() {
   return (
-    <Card className="flex flex-col gap-4 rounded-2xl border-border p-6 shadow-none">
+    <Card className="flex flex-col gap-4 rounded-2xl border-border/60 bg-card/50 p-6 backdrop-blur">
       <Skeleton className="h-5 w-32 rounded-full" />
       <Skeleton className="h-8 w-3/4" />
       <Skeleton className="h-4 w-full" />
@@ -256,6 +256,12 @@ function SkeletonCard() {
     </Card>
   );
 }
+
+const DIRECTION_ACCENTS: Record<string, string> = {
+  "Clean & Professional": "var(--color-primary)",
+  "Creative & Brandable": "var(--color-accent)",
+  "Bold & Innovative": "oklch(0.7 0.18 280)",
+};
 
 function NameCard({
   result,
@@ -278,9 +284,26 @@ function NameCard({
   onRefine: () => void;
   anyRefining: boolean;
 }) {
+  const accent = DIRECTION_ACCENTS[result.direction] ?? "var(--color-primary)";
   return (
-    <Card className="relative flex flex-col gap-4 rounded-2xl border-border p-6 shadow-none transition-all">
-      <span className="inline-flex w-fit items-center rounded-full border border-border bg-secondary px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-secondary-foreground">
+    <Card
+      className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border-border/70 bg-card/60 p-6 backdrop-blur-xl transition-all hover:border-primary/40"
+      style={{ boxShadow: `0 0 0 1px ${accent}15, 0 18px 48px -28px ${accent}` }}
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full opacity-30 blur-3xl transition-opacity group-hover:opacity-60"
+        style={{ background: accent }}
+      />
+
+      <span
+        className="relative inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
+        style={{
+          color: accent,
+          borderColor: `${accent}55`,
+          background: `${accent}12`,
+        }}
+      >
         {result.direction}
       </span>
 
@@ -289,33 +312,37 @@ function NameCard({
           <Skeleton className="h-8 w-3/4" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-primary">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             Refining… this usually takes under 10 seconds
           </div>
         </>
       ) : (
         <>
-          <h3 className="text-2xl font-bold tracking-tight text-foreground">{result.name}</h3>
-          <p className="text-sm leading-relaxed text-muted-foreground">{result.reason}</p>
+          <h3 className="relative text-2xl font-bold tracking-tight text-foreground">
+            {result.name}
+          </h3>
+          <p className="relative text-sm leading-relaxed text-muted-foreground">
+            {result.reason}
+          </p>
         </>
       )}
 
-      <div className="mt-auto pt-2">
+      <div className="relative mt-auto pt-2">
         {isPanelOpen && !isRefining ? (
-          <div className="space-y-3 rounded-xl border border-border bg-muted/40 p-3">
+          <div className="space-y-3 rounded-xl border border-primary/30 bg-background/60 p-3 backdrop-blur">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-foreground">Refine direction</span>
               <button
                 onClick={onClosePanel}
-                className="rounded-md p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+                className="rounded-md p-1 text-muted-foreground hover:bg-card hover:text-foreground"
                 aria-label="Cancel refinement"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
             <Select value={refinementChoice} onValueChange={onChangeRefinement}>
-              <SelectTrigger className="w-full rounded-lg bg-background text-sm">
+              <SelectTrigger className="w-full rounded-lg border-border bg-background/70 text-sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -329,7 +356,7 @@ function NameCard({
             <Button
               onClick={onRefine}
               size="sm"
-              className="w-full rounded-lg"
+              className="w-full rounded-lg bg-primary text-primary-foreground hover:brightness-110"
               disabled={anyRefining}
             >
               Regenerate
@@ -339,7 +366,7 @@ function NameCard({
           <Button
             variant="outline"
             size="sm"
-            className="w-full rounded-lg"
+            className="w-full rounded-lg border-primary/30 bg-transparent text-primary hover:bg-primary/10 hover:text-primary"
             onClick={onOpenPanel}
             disabled={isRefining || anyRefining}
           >
